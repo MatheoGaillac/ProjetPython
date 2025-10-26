@@ -5,6 +5,7 @@ class Document:
         self.date = date
         self.url = url
         self.texte = texte
+        self.type = None
 
     def afficherDoc(self):
         return f"Titre: {self.titre}, Auteur: {self.auteur}, Date: {self.date}, URL: {self.url}, Texte: {self.texte}"

@@ -18,20 +18,20 @@ class Corpus:
         self.naut = 0
 
     def afficherDocuments(self):
-        print("Documents instanciés")
+        print("---Documents instanciés---")
         for i, doc in self.id2doc.items():
             print(f"[{i}] {doc}")
 
     def afficherAuteurs(self):
-        print("Auteurs instanciés")
+        print("---Auteurs instanciés---")
         for nomAuteur, auteur in self.authors.items():
             print(auteur)
 
     def affichageDonnees(self, df):
-        print("Taille du corpus : ", len(df))
+        print("- Taille du corpus : ", len(df))
         for document in df["texte"]:
-            print("Nombre de mots : ", len(document.split(" ")))
-            print("Nombre de phrases : ", len(document.split(".")))
+            print("- Nombre de mots : ", len(document.split(" ")))
+            print("- Nombre de phrases : ", len(document.split(".")))
 
     def statsAuteur(self, nomAuteur):
         if nomAuteur in self.authors:
