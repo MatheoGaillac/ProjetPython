@@ -17,4 +17,4 @@ class Author:
         return self.ndoc, tailleMoyenne
     
     def __str__(self):
-        return f"{self.name} ({self.ndoc} documents)"
+        return f"- {self.name} ({self.ndoc} documents)"

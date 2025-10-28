@@ -16,4 +16,4 @@ class RedditDocument(Document):
         return self.type
 
     def __str__(self):
-        return f"({self.getType()}) : {self.titre} - {self.auteur} / Commentaires : {self.nbCommentaires}"
+        return f"====== ({self.getType()}): {self.titre} - {self.auteur} / Commentaires : {self.nbCommentaires} ======"

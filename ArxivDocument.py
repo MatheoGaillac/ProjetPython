@@ -19,4 +19,4 @@ class ArxivDocument(Document):
         return self.type
 
     def __str__(self):
-        return f"({self.getType()}) :{self.titre} - {self.auteur} / Co-auteurs : {self.coAuteur}"
+        return f"====== ({self.getType()}): {self.titre} - {self.auteur} / Co-auteurs : {self.coAuteur} ======"

@@ -8,39 +8,58 @@ import os
 from datetime import datetime
 from Document import Document
 from Author import Author
+from DocumentFactory import DocumentFactory
 
 class Corpus:
-    def __init__(self, nom):
-        self.nom = nom
-        self.authors = {}
-        self.id2doc = {}
-        self.ndoc = 0
-        self.naut = 0
 
+    _instance = None #Permet de stocker si l'instance est unique ou non (Singleton)
+
+    #Appelé à la création d'une instance de la classe
+    def __new__(cls, nom):
+        if cls._instance is None:
+            cls._instance = super(Corpus, cls).__new__(cls) #Créer une nouvelle instance
+            cls._instance._initialised = False #Change la valeur pour préciser qu'une instance existe désormais
+        return cls._instance
+
+    def __init__(self, nom):
+        if not self._initialised: #Vérifie qu'aucune instance n'existe
+            self.nom = nom
+            self.authors = {}
+            self.id2doc = {}
+            self.ndoc = 0
+            self.naut = 0
+            self._initialised = True #Prouve que la classe a bien été initialisée une fois
+
+    #Fonction d'affichage des documents récupérés
     def afficherDocuments(self):
-        print("---Documents instanciés---")
+        print("======Documents instanciés======")
         for i, doc in self.id2doc.items():
             print(f"[{i}] {doc}")
 
+    #Affichage des auteurs d'un documents
     def afficherAuteurs(self):
-        print("---Auteurs instanciés---")
+        print("======Auteurs instanciés======")
         for nomAuteur, auteur in self.authors.items():
             print(auteur)
 
+    #Affichage des données spécifiques demandées dans une question
     def affichageDonnees(self, df):
-        print("- Taille du corpus : ", len(df))
+        print("====== Taille du corpus : ", len(df))
+        print(df)
         for document in df["texte"]:
-            print("- Nombre de mots : ", len(document.split(" ")))
-            print("- Nombre de phrases : ", len(document.split(".")))
+            print(f"- Nombre de mots : {len(document.split(' '))}")
+            print(f"- Nombre de phrases : {len(document.split(' '))}")
 
+    #Affichage des statistiques par auteurs
     def statsAuteur(self, nomAuteur):
         if nomAuteur in self.authors:
             ndoc, tailleMoyenne = self.authors[nomAuteur].stats()
-            print(f"Auteur : {nomAuteur}, Nombre de documents : {ndoc}, Taille moyenne (en mots) : {tailleMoyenne}")
+            print(f"====== Auteur : {nomAuteur}, Nombre de documents : {ndoc}, Taille moyenne (en mots) : {tailleMoyenne} ======")
         else:
-            print("Auteur non trouvé")
+            print("====== Auteur non trouvé ======")
 
-    def loadReddit(self, reddit, keywords, limit = 10):
+    #Scrapping des données Reddit
+    def loadReddit(self, reddit, keywords, limit = 100):
         docs = []
         origine = []
 
@@ -52,13 +71,18 @@ class Corpus:
                 date = datetime.fromtimestamp(submission.created_utc)
                 url = submission.url
                 texte = text
+                nbCommentaires = submission.num_comments
 
-                self.addDocument(titre, auteur, date, url, texte)
+                doc = DocumentFactory.createDocument("Reddit", titre, auteur, date, url, texte, nbCommentaires)
+
+                self.addDocument(doc)
+
                 docs.append(text)
                 origine.append("Reddit")
         return docs, origine
     
-    def loadArxiv(self, keywords, limit = 10):
+    #Scrapping des données Arxiv
+    def loadArxiv(self, keywords, limit = 100):
         docs = []
         origine = []
         encodedKeywords = urllib.parse.quote(keywords) #Encodage du mot clé pour la requête Arxiv qui passe par un url
@@ -75,17 +99,20 @@ class Corpus:
             for entry in entries:
                 titre = entry.get("title")
                 auteurData = entry.get("author")
-                auteur = ", ".join(a["name"] for a in (auteurData if isinstance(auteurData, list) else [auteurData]))
+                auteur = ", ".join(a["name"] for a in (auteurData if isinstance(auteurData, list) else [auteurData])) #Amélioration de l'affichage des auteurs
                 date = datetime.strptime(entry.get("published"), "%Y-%m-%dT%H:%M:%SZ")
                 url = entry.get("id")
                 texte = entry["summary"].replace('\n', ' ')
 
-                self.addDocument(titre, auteur, date, url, texte)
+                doc = DocumentFactory.createDocument("Arxiv", titre, auteur, date, url, texte)
+
+                self.addDocument(doc)
 
                 docs.append(texte)
                 origine.append("Arxiv")
         return docs, origine
     
+    #Chargement d'un fichier .csv selon un mot clé
     def loadCorpus(self, reddit, keywords):
         if os.path.isfile(f'{keywords}.csv'):
             df = pd.read_csv(f'{keywords}.csv', sep='\t')
@@ -99,10 +126,10 @@ class Corpus:
             df.to_csv(f'{keywords}.csv', index=False, sep='\t')
         return df
 
-    def addDocument(self, titre, auteur, date, url, texte):
+    def addDocument(self, doc):
         self.ndoc += 1
-        doc = Document(titre, auteur, date, url, texte)
         self.id2doc[self.ndoc] = doc
+        auteur = doc.auteur
 
         if auteur not in self.authors:
             self.authors[auteur] = Author(auteur)
@@ -117,18 +144,21 @@ class Corpus:
         })
         return df
     
+    #Tri des documents par titre
     def sortDocumentByTitre(self, n):
         docTri = sorted(self.id2doc.values(), key=lambda d: d.titre)
-        print(f"{n} documents triés par titre")
+        print(f"====== {n} documents triés par titre ======")
         for doc in docTri[:n]:
             print(doc)
 
+    #Tri des documents par date
     def sortDocumentByDate(self, n):
         docTri = sorted(self.id2doc.values(), key=lambda d: d.date)
-        print(f"{n} documents triés par date")
+        print(f"====== {n} documents triés par date ======")
         for doc in docTri[:n]:
             print(doc)
 
+    #Sauvegarde des données dans un .csv
     def save(self, filename):
         data = []
         for docId, doc in self.id2doc.items():
@@ -144,6 +174,7 @@ class Corpus:
         df = pd.DataFrame(data)
         df.to_csv(filename, index=False, sep='\t')
 
+    #Récupération des données d'un .csv
     def load(self, filename):
         if not os.path.isfile(filename):
             print("Erreur, fichier introuvable")
@@ -153,13 +184,16 @@ class Corpus:
         df["date"] = pd.to_datetime(df["date"])
 
         for _, row in df.iterrows():
-            self.addDocument(
+            doc = Document(
                 row["titre"],
                 row["auteur"],
                 row["date"],
                 row["url"],
                 row["texte"]
             )
+            
+            self.addDocument(doc)
 
+    #Amélioration de l'affichage du print d'un objet de classe Corpus
     def __repr__(self):
         return (f"Corpus '{self.nom}' :\n - {self.ndoc} documents\n - {self.naut} auteurs")
