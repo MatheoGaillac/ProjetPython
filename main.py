@@ -70,5 +70,28 @@ if __name__ == '__main__' :
 
     # print(corpusSingleton1 is corpusSingleton2)
 
-    df = df[df["texte"].str.len() >= 20] #Supprime les documents qui ont moins de 20 caractères
-    totalText = " ".join(df["texte"]) #Créer une chaine de caractères avec l'ensemble des documents séparés pour un espace
+    # Test de la fonction search - TD6
+    searchKeywords = input("--- Entrez un mot-clé à rechercher dans les documents: ").strip()
+    resultats = corpus.search(df, searchKeywords)
+
+    if not resultats:
+        print("Aucun passage trouvé pour ce mot-clé !")
+    else: 
+        print("Passage trouvé avec ce mot clé dans les documents: ")
+        for i, passage in enumerate(resultats, 1):
+            print(f"[{i}] {passage[3]}")
+
+    # Test de la fonction concorde - TD6
+    concordeKeywords = input("--- (Concordancier) Entrez un mot-clé à rechercher dans les documents: ").strip()
+    df_concorde = corpus.concorde(df, concordeKeywords)
+
+    if df_concorde.empty:
+        print("(Concordancier) Aucun passage trouvé pour ce mot-clé !")
+    else:
+        print("(Concordancier) Passage trouvé avec ce mot clé dans les documents: ")
+        for i, row in df_concorde.iterrows():
+            print(f"[{i}] {row['contexteGauche']}- {row['mot']} -{row['contexteDroit']}")
+
+    # Test d'affichages des stats - TD6
+    n = int(input("Combien de mots fréquents voulez-vous afficher ? ").strip())
+    vocabulaire, freq = corpus.stats(n)

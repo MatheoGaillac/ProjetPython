@@ -4,7 +4,9 @@ import ssl
 import certifi
 import pandas as pd
 import os
+import re
 
+from collections import Counter
 from datetime import datetime
 from Document import Document
 from Author import Author
@@ -194,6 +196,81 @@ class Corpus:
             
             self.addDocument(doc)
 
+    # Fonction de recherche à partir d'un mot, cela retourne le mot et son contexte
+    def search(self, df, keyword):
+        df = df[df["texte"].str.len() >= 20] #Supprime les documents qui ont moins de 20 caractères
+        if not hasattr(self, "_totalText"):
+            self._totalText = " ".join(df["texte"]) #Créer une chaine de caractères avec l'ensemble des documents séparés pour un espace
+        
+        motif = re.compile(keyword, re.IGNORECASE)
+        matches = motif.finditer(self._totalText)
+        resultat = []
+
+        for m in matches:
+            start = max(m.start() - 20, 0) #Prendre les 20 premiers caractères
+            end = min(m.end() + 20, len(self._totalText))
+            passage = self._totalText[start:end]
+            resultat.append((m.group(), start, end, passage))
+        
+        return resultat
+    
+    # Fonction de création d'un concordancier et retourne le contexte
+    def concorde(self, df, keyword):
+        if not hasattr(self, "_totalText"):
+            df = df[df["texte"].str.len() >= 20]
+            self._totalText = " ".join(df["texte"])
+
+        motif = re.compile(keyword, re.IGNORECASE)
+        matches = motif.finditer(self._totalText)
+        resultat = []
+        for m in matches:
+            start = max(m.start() - 20, 0)
+            end = min(m.end() + 20, len(self._totalText))
+            contexteGauche = self._totalText[start:m.start()]
+            motTrouve = m.group()
+            contexteDroit = self._totalText[m.end():end]
+            resultat.append({
+                "contexteGauche": contexteGauche,
+                "mot": motTrouve,
+                "contexteDroit": contexteDroit
+            })
+        
+        df_concorde = pd.DataFrame(resultat)
+        return df_concorde
+    
+    # Nettoyage du texte à l'aide de regex
+    def nettoyer_texte(self, texte):
+        texte = texte.lower()
+        texte = texte.replace('\n', ' ')
+        texte = re.sub(r'[^\w\s]', '', texte)
+        texte = re.sub(r'\d+', '', texte)
+        return texte.strip()
+    
+    # Récupération de chaque mot individuellement, en splittant sur des caractères spécifiques
+    def stats(self, n):
+        setVocabulaire = set()
+        compteurMot = Counter()
+        compteurDoc = Counter()
+
+        for doc in self.id2doc.values():
+            textClean = self.nettoyer_texte(doc.texte)
+            mots = re.split(r'[^a-zA-Z]+', textClean)
+            mots = list(filter(None, mots))
+            setVocabulaire.update(mots)
+            compteurMot.update(mots)
+            motUniquesDoc = set(mots)
+            compteurDoc.update(motUniquesDoc)
+
+        print(f"Nombre de mots différents dans le corpus: {len(setVocabulaire)}")
+
+        freq = pd.DataFrame(compteurMot.items(), columns=['mot', 'frequence'])
+        freq['doc_frequency'] = freq['mot'].apply(lambda m: compteurDoc[m])
+        freq = freq.sort_values(by='frequence', ascending=False)
+
+        print(f"Top {n} des mots les plus présents:\n {freq.head(n)}")
+
+        return setVocabulaire, freq
+    
     #Amélioration de l'affichage du print d'un objet de classe Corpus
     def __repr__(self):
         return (f"Corpus '{self.nom}' :\n - {self.ndoc} documents\n - {self.naut} auteurs")
