@@ -1,7 +1,6 @@
 import praw
 import os
 from Corpus import Corpus
-from SearchEngine import SearchEngine
 from RedditDocument import RedditDocument
 from ArxivDocument import ArxivDocument
 from datetime import datetime
@@ -71,51 +70,5 @@ if __name__ == '__main__' :
 
     # print(corpusSingleton1 is corpusSingleton2)
 
-    # Test de la fonction search - TD6
-    # searchKeywords = input("--- Entrez un mot-clé à rechercher dans les documents: ").strip()
-    # resultats = corpus.search(df, searchKeywords)
-
-    # if not resultats:
-    #     print("Aucun passage trouvé pour ce mot-clé !")
-    # else: 
-    #     print("Passage trouvé avec ce mot clé dans les documents: ")
-    #     for i, passage in enumerate(resultats, 1):
-    #         print(f"[{i}] {passage[3]}")
-
-    # Test de la fonction concorde - TD6
-    # concordeKeywords = input("--- (Concordancier) Entrez un mot-clé à rechercher dans les documents: ").strip()
-    # df_concorde = corpus.concorde(df, concordeKeywords)
-
-    # if df_concorde.empty:
-    #     print("(Concordancier) Aucun passage trouvé pour ce mot-clé !")
-    # else:
-    #     print("(Concordancier) Passage trouvé avec ce mot clé dans les documents: ")
-    #     for i, row in df_concorde.iterrows():
-    #         print(f"[{i}] {row['contexteGauche']}- {row['mot']} -{row['contexteDroit']}")
-
-    # Test d'affichages des stats - TD6
-    # n = int(input("Combien de mots fréquents voulez-vous afficher ? ").strip())
-    # vocabulaire, freq = corpus.stats(n)
-
-
-    # Utilisation du moteur de recherche - TD7
-
-    engine = SearchEngine(corpus)
-
-    searchKeywords = input("(Moteur de recherche) Veuillez entrer une requete : ").strip()
-
-    if searchKeywords:
-        while True:
-            nResult = input("Combien de document à retourner ?").strip()
-            nResult = int(nResult)
-            if nResult <= 0:
-                print("Le nombre doit être positif :!")
-            else:
-                break
-        
-        resultats = engine.search(searchKeywords, nResults=nResult)
-        if resultats.empty:
-            print("Aucun documents trouvé")
-        else:
-            print(resultats[["score", "titre", "auteur", "date"]].to_string())
-
+    df = df[df["texte"].str.len() >= 20] #Supprime les documents qui ont moins de 20 caractères
+    totalText = " ".join(df["texte"]) #Créer une chaine de caractères avec l'ensemble des documents séparés pour un espace
