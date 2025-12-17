@@ -115,8 +115,12 @@ class Corpus:
     
     #Chargement d'un fichier .csv selon un mot clé
     def loadCorpus(self, reddit, keywords):
-        if os.path.isfile(f'{keywords}.csv'):
-            df = pd.read_csv(f'{keywords}.csv', sep='\t')
+        csv_dir = "csv"
+        os.makedirs(csv_dir, exist_ok=True)
+        file_path = os.path.join(csv_dir, f"{keywords}.csv")
+
+        if os.path.isfile(file_path):
+            df = pd.read_csv(file_path, sep='\t')
         else:
             docsReddit, origineReddit = self.loadReddit(reddit, keywords)
             docsArxiv, origineArxiv = self.loadArxiv(keywords)
@@ -124,7 +128,7 @@ class Corpus:
             docs = docsReddit + docsArxiv
             origine = origineReddit + origineArxiv
             df = self.createDataframe(docs, origine)
-            df.to_csv(f'{keywords}.csv', index=False, sep='\t')
+            df.to_csv(file_path, index=False, sep='\t')
         return df
 
     def addDocument(self, doc):

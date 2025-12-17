@@ -11,11 +11,14 @@ if __name__ == '__main__' :
 
     keywords = input("====== Écrivez votre recherche : ").strip()
     corpus = Corpus(keywords)
-    filename = f"{keywords}_corpus.csv"
 
     df = corpus.loadCorpus(reddit, keywords)
 
     #Si un document existe, on le charge, sinon on le sauvegarde
+    csv_dir = "csv"
+    os.makedirs(csv_dir, exist_ok=True)
+    filename = os.path.join(csv_dir, f"{keywords}_corpus.csv")
+
     if os.path.isfile(filename):
         corpus.load(filename)
     else:
