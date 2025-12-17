@@ -3,6 +3,7 @@ import scipy.sparse as sp
 import numpy as np
 import pandas as pd
 from collections import Counter
+from tqdm import tqdm
 
 class SearchEngine:
     def __init__(self, corpus):
@@ -87,7 +88,7 @@ class SearchEngine:
 
         return mat_tfidf
     
-    def search(self, keywords, nResults = 10):
+    def search(self, keywords, nResults = 10, auteur = None, date = None):
         N = self.corpus.ndoc
         numWords = len(self.vocab)
 
@@ -126,15 +127,13 @@ class SearchEngine:
         ranked_indices = np.argsort(cos_similarity)[::-1]
         
         results = []
-        for doc_index in ranked_indices:
+        #La barre de progression ne se verra quasiment pas en vu de la rapidité du programme
+        for doc_index in tqdm(ranked_indices, desc="Parcours des documents"):
             score = cos_similarity[doc_index]
-            
             if score <= 0 or len(results) >= nResults:
-                 break
-
+                break
             doc_id = doc_index + 1
             document = self.corpus.id2doc.get(doc_id)
-            
             if document:
                 results.append({
                     "score": score,
@@ -146,5 +145,10 @@ class SearchEngine:
 
         df_results = pd.DataFrame(results)
         df_results['score'] = df_results['score'].round(4)
+
+        if auteur:
+            df_results = df_results[df_results['auteur'].str.contains(auteur, case=False, na=False)]
+        if date:
+            df_results = df_results[df_results['date'] == date]
         
         return df_results
