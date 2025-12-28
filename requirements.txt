@@ -1,0 +1,8 @@
+praw
+xmltodict
+certifi
+pandas
+numpy
+scipy
+ipywidgets
+IPython
