@@ -6,3 +6,4 @@ numpy
 scipy
 ipywidgets
 IPython
+tqdm
